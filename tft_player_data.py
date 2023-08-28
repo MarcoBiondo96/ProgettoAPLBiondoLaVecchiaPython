@@ -9,7 +9,15 @@ def get_player_info(api_key, nome_ev):
         return response.json()
     else:
         return None
-
+def get_player_info_id(api_key, nome_ev):
+    url = f"https://euw1.api.riotgames.com/lol/summoner/v4/summoners/by-name/{nome_ev}?api_key={api_key}"
+    response = requests.get(url)
+    
+    if response.status_code == 200:
+        return response.json()
+    else:
+        return None
+        
 def get_player_matches(api_key, puuid):
     url = f"https://europe.api.riotgames.com/tft/match/v1/matches/by-puuid/{puuid}/ids?start=0&count=10&api_key={api_key}"
     response = requests.get(url)
@@ -20,6 +28,7 @@ def get_player_matches(api_key, puuid):
         return []
 
 def get_player_rank(api_key, summoner_id):
+    
     url = f"https://euw1.api.riotgames.com/lol/league/v4/entries/by-summoner/{summoner_id}?api_key={api_key}"
     response = requests.get(url)
     ranks = response.json()
@@ -44,17 +53,18 @@ def calculate_winrate(wins, losses):
         return 0
     return (wins / total_matches) * 100
 
-def process_player_data(api_key, nome_ev):
-    player_info = get_player_info(api_key, nome_ev)
+def process_player_data(api_key_tft, api_key_lol,nome_ev):
+    
+    player_info = get_player_info(api_key_tft, nome_ev)
     
     if not player_info:
         return "Errore_account_non_esistente"
     
     puuid = player_info.get('puuid')
-    summoner_id = player_info.get('id')
+    summoner_id = get_player_info_id(api_key_lol, nome_ev).get('id')
     
-    matches = get_player_matches(api_key, puuid)
-    player_rank = get_player_rank(api_key, summoner_id)
+    matches = get_player_matches(api_key_tft, puuid)
+    player_rank = get_player_rank(api_key_lol, summoner_id)
     
     tier = player_rank.get('tier', "Nessuno")
     rank = player_rank.get('rank', "Nessuno")
@@ -76,7 +86,7 @@ def process_player_data(api_key, nome_ev):
     losses = 0
     
     for match_id in matches:
-        match_details = get_match_details(api_key, match_id)
+        match_details = get_match_details(api_key_tft, match_id)
         if not match_details:
             continue
         
@@ -103,4 +113,5 @@ def process_player_data(api_key, nome_ev):
     
     player_data["winrate"] = calculate_winrate(wins, losses)
     return player_data
+
 
